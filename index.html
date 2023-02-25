@@ -1,0 +1,10 @@
+<img src="" alt="" id="img">
+<script>
+  var el = document.getElementById('img');
+
+  fetch('http://localhost:3000/a')
+  .then(response => response.json()).then(response =>{
+    el.src = response[0].title
+    console.log(response[0]);
+  })
+</script>
