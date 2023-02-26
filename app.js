@@ -2,17 +2,21 @@ const express = require('express');
 const app = express();
 
 const db = require('./db');
+const routes = require('./routes/routes')
 
-const {Track, Album, User} = require('./models')
+const {Track, Album, User,Ep} = require('./models')
 
 const cors = require('cors');
 
 app.use(express.json());
 app.use(cors())
 
+app.use("/api", routes);
+
+
 //Получаем все альбомы
 app.get("/a",(req, res)=>{
-Album.findAll({include : [Track]}).then(albums =>{
+Ep.findAll({include : [User, Track]}).then(albums =>{
   res.json(albums)
 }).catch(error =>{
   res.json(`Ошибка при получении запроса ${error}`)
@@ -28,15 +32,6 @@ app.get("/t",(req, res)=>{
   })
   })
 
-  //Получение всех пользователей
-  app.get("/u",(req, res)=>{
-    User.findAll({ include: [{ model: Track, through: { attributes: []} }] }).then(users =>{
-      res.json(users)
-    }).catch(error =>{
-      res.json(`Ошибка при получении запроса ${error}`)
-    })
-    })
-
   //Создание трека
   app.post("/t",(req,res)=>{
     const {title, id} = req.body;
@@ -49,14 +44,14 @@ app.get("/t",(req, res)=>{
 
     })
   })
-
+//создание альбома
   app.post('/a', (req, res) => {
-    const {id, title, track} = req.body;
+    const {idUser, titleAlbum, track} = req.body;
 
-      User.findOne({ where: { id: id } })
+      User.findOne({ where: { id: idUser } })
       .then((user) => {
         if (!user) {
-          res.json(`User with id ${id} not found.`);
+          res.json(`User with idUser ${idUser} not found.`);
           return;
         }
         if (track.length < 1) {
@@ -64,19 +59,21 @@ app.get("/t",(req, res)=>{
           return;
         }
         const albumData = {
-          title: title,
+          title: titleAlbum,
           tracks: track,
         };
         user.createAlbum(albumData, { include: [Track] })
           .then((album) => {
             const tracks = album.tracks;
             tracks.forEach((track) => {
-              user.addTrack(track, { through: { listened: false } });
+              user.addTrack(track
+                // , { through: { listened: false } }
+                );
             });
-            res.json(`Album and tracks have been created for user ${id}.`);
+            res.json(`Album and tracks have been created for user ${idUser}.`);
           })
           .catch((error) => {
-            res.json(`Error creating album and tracks for user ${id}:`, error);
+            res.json(`Error creating album and tracks for user ${idUser}:`, error);
           });
       })
       .catch((error) => {
