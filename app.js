@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const { sequelize } = require("./db");
 
 const db = require('./db');
 const routes = require('./routes/routes')
@@ -79,11 +80,13 @@ app.get("/t",(req, res)=>{
       .catch((error) => {
         res.json("Error finding user:", error);
       });
-
-
   })
 
-
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-  });
+  sequelize
+  .sync()
+  .then(() => {
+    app.listen(3000, () => {
+      console.log('Server is running on port 3000');
+    });
+  })
+  .catch((error) => console.error(error));

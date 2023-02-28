@@ -1,4 +1,4 @@
-const { User, Track, Album,Ep,Single } = require("../models");
+const { User, Track, Album,Ep,Single,Genre,UserTrack, ListeningTrack } = require("../models");
 const bcrypt = require('bcrypt');
 class userController {
   async getAllUsers(req, res) {
@@ -9,7 +9,36 @@ class userController {
     })
   }
   async getOneUser(req, res) {
-    User.findOne({where:{id: req.params.id},attributes: ["id","login"], include: [{ model: Album},{ model: Ep},{ model: Single},{ model: Track,attributes:["title"], through: { attributes: []}}] })
+    User.findOne({
+      where:{id: req.params.id},
+      attributes: ["id","login"],
+        include: [
+                  { model: Album},
+                  { model: Ep},
+                  { model: Single},
+                  { model: Track, 
+                    include: [
+                           {model: Genre, attributes: ["id","title"],
+                                  through: { attributes: []},
+                                  model: User,attributes: ["login"],
+                                  through: { model: ListeningTrack,
+                                  attributes: ['id']}}],
+                            attributes:["id","title"],
+                            through: {model: UserTrack,attributes: []}}] 
+                          })
+//     Достать недавние прослушивания пользователя
+//      User.findOne({
+//       where: { id: req.params.id },
+//       include: [{
+//         model: Track,
+//         through: { model: UserTrack, where: { userId: req.params.id }},
+//         include: {
+//           model: User,
+//           attributes: ["login"],
+//           through: { model: ListeningTrack, attributes: ['id']},
+//         }
+//       }]
+// })    
     .then(user =>{
       res.json(user)
     }).catch(error =>{

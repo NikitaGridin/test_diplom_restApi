@@ -67,7 +67,68 @@ const Playlist = sequelize.define(
     timestamps: false,
   }
 );
+const Genre = sequelize.define(
+  "genre",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    title: { type: DataTypes.STRING, allowNull: false  },
+  },
+  {
+    timestamps: false,
+  }
+);
 
+const UserTrack = sequelize.define('UserTrack', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: User,
+      key: 'id'
+    }
+  },
+  trackId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Track,
+      key: 'id'
+    }
+  }
+}, {
+  timestamps: false
+});
+
+const ListeningTrack = sequelize.define('ListeningTrack', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: User,
+      key: 'id'
+    }
+  },
+  trackId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Track,
+      key: 'id'
+    }
+  }
+}, {
+  timestamps: false
+});
 
 Album.hasMany(Track,{allowNull: true,onDelete: "cascade"});
 Track.belongsTo(Album);
@@ -78,8 +139,8 @@ Track.belongsTo(Ep);
 Single.hasMany(Track,{allowNull: true,onDelete: "cascade"});
 Track.belongsTo(Single);
 
-User.belongsToMany(Track, { through: "UserTrack", onDelete: "cascade"});
-Track.belongsToMany(User, { through: "UserTrack" , onDelete: "cascade"});
+User.belongsToMany(Track, { through: UserTrack, onDelete: "cascade"});
+Track.belongsToMany(User, { through: UserTrack , onDelete: "cascade"});
 
 User.hasMany(Album,{ foreignKey: {
   allowNull: false
@@ -104,14 +165,11 @@ Playlist.belongsTo(User)
 Playlist.belongsToMany(Track, { through: "PlaylistTrack" , unique: true});
 Track.belongsToMany(Playlist, { through: "PlaylistTrack", unique: true});
 
+Track.belongsToMany(Genre, { through: "TrackGenre" , unique: true});
+Genre.belongsToMany(Track, { through: "TrackGenre", unique: true});
 
-
-sequelize.sync().then(() => {
-  console.log("Таблицы успешно созданы");
-}).catch(error => {
-  console.log(`Ошибка при создании таблиц: ${error}`);
-});
-
+User.belongsToMany(Track, { through: ListeningTrack});
+Track.belongsToMany(User, { through: ListeningTrack});
 
 module.exports = {
   Track,
@@ -119,5 +177,5 @@ module.exports = {
   User,
   Playlist,
   Ep,
-  Single
+  Single, Genre,UserTrack,ListeningTrack
 };
