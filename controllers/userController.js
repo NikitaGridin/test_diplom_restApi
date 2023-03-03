@@ -1,99 +1,87 @@
-const { User, Track, Album,Ep,Single,Genre,UserTrack, ListeningTrack } = require("../models");
+const { User } = require("../models/models");
 const bcrypt = require('bcrypt');
 class userController {
   async getAllUsers(req, res) {
-    User.findAll().then(users =>{
-      res.json(users)
-    }).catch(error =>{
-      res.json(`Ошибка при получении запроса ${error}`)
-    })
+    try {
+      const users = await User.findAll();
+  
+      res.status(200).send(users);
+    } catch (error) {
+      res.status(500).send('Что-то пошло не так!');
+    }
   }
   async getOneUser(req, res) {
-    User.findOne({
-      where:{id: req.params.id},
-      attributes: ["id","login"],
-        include: [
-                  { model: Album},
-                  { model: Ep},
-                  { model: Single},
-                  { model: Track, 
-                    include: [
-                           {model: Genre, attributes: ["id","title"],
-                                  through: { attributes: []},
-                                  model: User,attributes: ["login"],
-                                  through: { model: ListeningTrack,
-                                  attributes: ['id']}}],
-                            attributes:["id","title"],
-                            through: {model: UserTrack,attributes: []}}] 
-                          })
-//     Достать недавние прослушивания пользователя
-//      User.findOne({
-//       where: { id: req.params.id },
-//       include: [{
-//         model: Track,
-//         through: { model: UserTrack, where: { userId: req.params.id }},
-//         include: {
-//           model: User,
-//           attributes: ["login"],
-//           through: { model: ListeningTrack, attributes: ['id']},
-//         }
-//       }]
-// })    
-    .then(user =>{
-      res.json(user)
-    }).catch(error =>{
-      res.json(`Ошибка при получении запроса ${error}`)
-    })
-
+    try {
+      const {id} = req.params;
+      const user = await User.findOne(
+        {
+          where:{id:id}
+        }
+      );
+      if(!user){
+        return res.status(404).send('Пользователь не найден!');
+      }
+      res.send(user).status(200);
+    } catch (error) {
+      res.status(500).send('Что-то пошло не так!');
+    }
   }
   async createUser(req, res) {
-    const {login, email, password} = req.body;
-    User.findAll({where: {email: email}}).then(user =>{
-      if(user.length > 1){
-        res.json("Данный email занят");
-        return;
+    try {
+      const { login, email, password } = req.body;
+
+      const user = await User.findOne({ where: { email } });
+  
+      if (user) {
+        return res.status(409).send('Данный Email занят!');
       }
-      else{
-        bcrypt.hash(password, 10).then(pass =>{
-          const password_hash = pass;
-          User.create({login: login, email: email, password:password_hash }).then(user =>{
-            res.json(user)
-            return;
-          })
-        })
-        .catch(error=>{
-          res.json(`Ошибка при получении запроса ${error}`)
-          return;
-        })
-      }
-    })
+  
+      const password_hash = await bcrypt.hash(password, 10);
+  
+      const newUser = await User.create({ login, email, password: password_hash });
+  
+      res.status(200).send(newUser);
+    } catch (error) {
+      res.status(500).send('Что-то пошло не так!');
+    }
   }
   async updateUser(req, res) {
-    const {id} = req.params;
-    const {login, email, password} = req.body;
-        bcrypt.hash(password, 10).then(pass =>{
-          const password_hash = pass;
-            User.update({
-            login:login,
-            email:email,
-            password:password_hash
-          },
-          {
-          where :{id:id}
-          }).then(user =>{
-            res.json("Данные изменены");
-          })
-          .catch(error=>{
-            res.json(`Ошибка при получении запроса ${error}`)
-            return;
-          })
-          })}
+    try {
+      const { id } = req.params;
+      const { login, email, password } = req.body;
+  
+      const password_hash = await bcrypt.hash(password, 10);
+      const user = await User.findOne({ where: { email } });
+      if(user){
+        return res.status(409).send('Данный Email занят!');
+      }
+
+      await User.update(
+        { login, email, password: password_hash },
+        { where: { id } }
+      );
+  
+      res.status(200).send('Данные успешно изменены!');
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Что-то пошло не так!');
+    }
+  }
 
   async deleteUser(req, res) {
-  const {id} = req.params;
-   User.destroy({where: {id: id}}).then(user =>{
-    res.json("Deleted")
-   })
+  try {
+    const {id} = req.params;
+    const user = await User.destroy({where: {id:id}});
+    if(!user){
+      return res.status(500).send('Пользователь не найден!');
+    }
+    res.status(200).send('Пользователь успешно удалён!');
+  } catch (error) {
+    res.status(500).send('Что-то пошло не так!');
+  }
+
   }
 }
 module.exports = new userController();
+
+

@@ -3,6 +3,11 @@ const { Sequelize } = require('@sequelize/core');
 const sequelize = new Sequelize('dip', 'root', '', {
   host: 'localhost',
   dialect: 'mysql',
+  //Отключение запросов в консоли
+  logging: false,
+  define: {
+    timestamps: false
+  }
 });
 
 sequelize
