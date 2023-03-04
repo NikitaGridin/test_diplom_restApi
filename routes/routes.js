@@ -9,6 +9,7 @@ router.use("/track", userRouter)
 router.use("/playlist", userRouter)
 router.use("/single", userRouter)
 router.use("/ep", userRouter)
+router.use("/connection", userRouter)
 
 
 module.exports = router;

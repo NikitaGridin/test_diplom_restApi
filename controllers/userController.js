@@ -1,5 +1,6 @@
-const { User } = require("../models/models");
+const { User,Connection } = require("../models/models");
 const bcrypt = require('bcrypt');
+const { Op } = require("@sequelize/core");
 class userController {
   async getAllUsers(req, res) {
     try {
@@ -28,28 +29,33 @@ class userController {
   }
   async createUser(req, res) {
     try {
-      const { login, email, password } = req.body;
+      const { login, email, password, img } = req.body;
 
+      if(!login || !email || !password || !img){
+        return res.status(400).send('Пожалуйста заполните все поля!');
+      }
+      
       const user = await User.findOne({ where: { email } });
-  
       if (user) {
         return res.status(409).send('Данный Email занят!');
       }
   
       const password_hash = await bcrypt.hash(password, 10);
   
-      const newUser = await User.create({ login, email, password: password_hash });
+      const newUser = await User.create({ login, email, password: password_hash, img });
   
       res.status(200).send(newUser);
     } catch (error) {
-      res.status(500).send('Что-то пошло не так!');
+      res.status(500).send('Что-то пошло не так!'+error);
     }
   }
   async updateUser(req, res) {
     try {
       const { id } = req.params;
       const { login, email, password } = req.body;
-  
+      if(!login || !email || !password){
+        return res.status(400).send('Пожалуйста заполните все поля!');
+      }
       const password_hash = await bcrypt.hash(password, 10);
       const user = await User.findOne({ where: { email } });
       if(user){

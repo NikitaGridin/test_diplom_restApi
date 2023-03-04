@@ -20,9 +20,10 @@ const User = sequelize.define(
   "user",
   {
     id: id,
-    login: { type: DataTypes.STRING, allowNull: false  },
-    email: { type: DataTypes.STRING, allowNull: false, unique: true },
-    password: { type: DataTypes.STRING, allowNull: false  },
+    login: { type: DataTypes.STRING, allowNull: false},
+    email: { type: DataTypes.STRING, allowNull: false, unique: true},
+    password: { type: DataTypes.STRING, allowNull: false},
+    img: { type: DataTypes.STRING, allowNull: false},
     date_create: date_create
   }
 );
@@ -32,9 +33,9 @@ const Track = sequelize.define(
   "track",
   {
     id: id,
-    title: { type: DataTypes.STRING, allowNull: false },
-    date_create: date_create
-
+    title: { type: DataTypes.STRING, allowNull: false},
+    img: { type: DataTypes.STRING, allowNull: false},
+    date_create: date_create,
   }
 );
 
@@ -43,7 +44,10 @@ const Album = sequelize.define(
   "album",
   {
     id: id,
-    title: { type: DataTypes.STRING, allowNull: false  },
+    title: { type: DataTypes.STRING, allowNull: false},
+    img: { type: DataTypes.STRING, allowNull: false},
+    type: DataTypes.ENUM('Album', 'Ep', 'Single'),
+    status: DataTypes.ENUM('published', 'awaiting publication', 'rejected'),
     date_create: date_create
   }
 );
@@ -53,9 +57,9 @@ const Playlist = sequelize.define(
   "playlist",
   {
     id: id,
-    title: { type: DataTypes.STRING, allowNull: false  },
+    title: { type: DataTypes.STRING, allowNull: false},
+    img: { type: DataTypes.STRING, allowNull: false},
     date_create: date_create
-
   }
 );
 
@@ -64,24 +68,8 @@ const Genre = sequelize.define(
   "genre",
   {
     id: id,
-    title: { type: DataTypes.STRING, allowNull: false  },
-  }
-);
-
-//Модель типов релиза
-const TypeAlbum = sequelize.define(
-  "type_album",
-  {
-    id: id,
-    title: { type: DataTypes.STRING, allowNull: false  },
-  }
-);
-//Модель статуса публикации
-const StatusRelease = sequelize.define(
-  "status_release",
-  {
-    id: id,
-    title: { type: DataTypes.STRING, allowNull: false  },
+    title: { type: DataTypes.STRING, allowNull: false},
+    img: { type: DataTypes.STRING, allowNull: false},
   }
 );
 
@@ -89,7 +77,6 @@ const StatusRelease = sequelize.define(
 const UserTrack = sequelize.define('user_track', {
   id: id,
   date_create: date_create
-
 });
 
 //Модель хранящая информацию о пользователе и треке который он прослушал
@@ -108,9 +95,15 @@ const PlaylistTrack = sequelize.define('playlist_track', {
 const TrackGenre = sequelize.define('track_genre', {
   id: id,
 });
-
+const AlbumGenre = sequelize.define('album_genre', {
+  id: id,
+});
 //Модель хранящая информацию о пользователе и альбомах которые он добавил
 const UserAlbumLibray = sequelize.define('user_album_libray', {
+  id: id,
+});
+
+const UserPlaylistLibray = sequelize.define('user_playlist_libray', {
   id: id,
 });
 
@@ -119,14 +112,20 @@ const UserTrackLibray = sequelize.define('user_track_libray', {
   id: id,
 });
 
-const ReleaseInfo = sequelize.define('release_info', {
+//Модель хранящая информацию о среденённых пользователях
+const Connection = sequelize.define('connection', {
   id: id,
-  date_create: date_create,
-  date_publicate: {
-    type: DataTypes.DATE,
-    allowNull: true,
-    defaultValue: DataTypes.NOW,
-  }
+  status: DataTypes.ENUM('accept', 'awaiting accept', 'rejected'),
+}, {
+  primaryKey: ['senderId', 'receiverId']
+});
+
+//Модель хранящая информацию подписках на пользователей
+const Subcribe = sequelize.define('subcribe', {
+  id: id,
+},
+{
+  primaryKey: ['subscriberId', 'userId']
 });
 
 Album.hasMany(Track,{onDelete: "cascade"});
@@ -135,7 +134,7 @@ Track.belongsTo(Album);
 User.belongsToMany(Track, { through: UserTrack, onDelete: "cascade", unique: true});
 Track.belongsToMany(User, { through: UserTrack , onDelete: "cascade", unique: true});
 
-User.hasMany(Album, {onDelete: "cascade"});
+User.hasMany(Album, {onDelete: "cascade", allowNull: false});
 Album.belongsTo(User)
 
 User.hasMany(Playlist, {onDelete: "cascade"});
@@ -147,22 +146,54 @@ Track.belongsToMany(Playlist, { through: PlaylistTrack, unique: true});
 Track.belongsToMany(Genre, { through: TrackGenre, unique: true});
 Genre.belongsToMany(Track, { through: TrackGenre, unique: true});
 
-User.belongsToMany(Track, { through: UserTrackPlay, onDelete: "set null"});
-Track.belongsToMany(User, { through: UserTrackPlay, onDelete: "cascade"});
+Album.belongsToMany(Genre, { through: AlbumGenre, unique: true});
+Genre.belongsToMany(Album, { through: AlbumGenre, unique: true});
 
-User.belongsToMany(Album, { through: UserAlbumLibray,onDelete: "cascade"});
-Album.belongsToMany(User, { through: UserAlbumLibray});
+User.belongsToMany(Track, { through: UserTrackPlay, onDelete: "set null", unique: true});
+Track.belongsToMany(User, { through: UserTrackPlay, onDelete: "cascade", unique: true});
 
-User.belongsToMany(Track, { through: UserTrackLibray,onDelete: "cascade"});
-Track.belongsToMany(User, { through: UserTrackLibray});
+User.belongsToMany(Album, { through: UserAlbumLibray,onDelete: "cascade", unique: true});
+Album.belongsToMany(User, { through: UserAlbumLibray, unique: true});
 
-ReleaseInfo.belongsTo(Album, {
-  onDelete: 'CASCADE'
-})
+User.belongsToMany(Track, { through: UserTrackLibray,onDelete: "cascade", unique: true});
+Track.belongsToMany(User, { through: UserTrackLibray, unique: true});
 
-ReleaseInfo.belongsTo(StatusRelease)
+User.belongsToMany(Track, { through: UserPlaylistLibray,onDelete: "cascade", unique: true});
+Playlist.belongsToMany(User, { through: UserPlaylistLibray, unique: true});
 
-Album.belongsTo(TypeAlbum)
+User.belongsToMany(User, {
+  through: Connection,
+  as: 'sender',
+  foreignKey: 'senderId',
+  otherKey: 'receiverId'
+});
+
+User.belongsToMany(User, {
+  through: Connection,
+  as: 'receiver',
+  foreignKey: 'receiverId',
+  otherKey: 'senderId'
+});
+
+Connection.belongsTo(User, { as: 'sender', foreignKey: 'senderId' });
+Connection.belongsTo(User, { as: 'receiver', foreignKey: 'receiverId' });
+
+User.belongsToMany(User, {
+  through: Subcribe,
+  as: 'subscriber',
+  foreignKey: 'subscriberId',
+  otherKey: 'userId'
+});
+
+User.belongsToMany(User, {
+  through: Subcribe,
+  as: 'user',
+  foreignKey: 'userId',
+  otherKey: 'subscriberId'
+});
+
+Subcribe.belongsTo(User, { as: 'subscriber', foreignKey: 'subscriberId' });
+Subcribe.belongsTo(User, { as: 'user', foreignKey: 'userId' });
 
 module.exports = {
   User,
@@ -170,15 +201,14 @@ module.exports = {
   Album,
   Playlist,
   Genre,
-  TypeAlbum,
-  StatusRelease,
   UserTrack,
   UserTrackPlay,
   PlaylistTrack,
   TrackGenre,
   UserAlbumLibray,
   UserTrackLibray,
-  ReleaseInfo
+  Connection,
+  Subcribe
 };
 
 
