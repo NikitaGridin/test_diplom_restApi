@@ -1,11 +1,9 @@
-const { User,Connection } = require("../models/models");
-const bcrypt = require('bcrypt');
-const { Op } = require("@sequelize/core");
+const userService = require("../service/userService");
+const fs = require("fs");
 class userController {
   async getAllUsers(req, res) {
     try {
-      const users = await User.findAll();
-  
+      const users = await userService.getAllUsers();
       res.status(200).send(users);
     } catch (error) {
       res.status(500).send('Что-то пошло не так!');
@@ -13,74 +11,53 @@ class userController {
   }
   async getOneUser(req, res) {
     try {
-      const {id} = req.params;
-      const user = await User.findOne(
-        {
-          where:{id:id}
-        }
-      );
-      if(!user){
-        return res.status(404).send('Пользователь не найден!');
-      }
+      const user = await userService.getOneUser(req.params.id)
       res.send(user).status(200);
     } catch (error) {
       res.status(500).send('Что-то пошло не так!');
     }
   }
   async createUser(req, res) {
-    try {
-      const { login, email, password, img } = req.body;
-
-      if(!login || !email || !password || !img){
-        return res.status(400).send('Пожалуйста заполните все поля!');
+    try {    
+      const user = await userService.createUser(req.body, req.file);
+      if(user.errorCode){
+        fs.unlink(`uploads/images/${req.file.filename}`, ()=>{
+          console.log('deleted');
+        });
+        res.status(user.errorCode).send(user.errorMessage);
+        return;
       }
-      
-      const user = await User.findOne({ where: { email } });
-      if (user) {
-        return res.status(409).send('Данный Email занят!');
-      }
-  
-      const password_hash = await bcrypt.hash(password, 10);
-  
-      const newUser = await User.create({ login, email, password: password_hash, img });
-  
-      res.status(200).send(newUser);
+      res.status(200).send(user);
     } catch (error) {
-      res.status(500).send('Что-то пошло не так!'+error);
+      
+      res.status(500).send(`Что-то пошло не так! ${error}`);
     }
   }
   async updateUser(req, res) {
     try {
-      const { id } = req.params;
-      const { login, email, password } = req.body;
-      if(!login || !email || !password){
-        return res.status(400).send('Пожалуйста заполните все поля!');
+      const user = await userService.updateUser(req.body,req.params.id,req.file.filename)
+      if(user.errorCode){
+        fs.unlink(`uploads/images/${req.file.filename}`, ()=>{
+          console.log('deleted');
+        });
+        res.status(user.errorCode).send(user.errorMessage);
+        return;
       }
-      const password_hash = await bcrypt.hash(password, 10);
-      const user = await User.findOne({ where: { email } });
-      if(user){
-        return res.status(409).send('Данный Email занят!');
-      }
-
-      await User.update(
-        { login, email, password: password_hash },
-        { where: { id } }
-      );
-  
       res.status(200).send('Данные успешно изменены!');
     } catch (error) {
-      console.error(error);
-      res.status(500).send('Что-то пошло не так!');
+      res.status(500).send(`Что-то пошло не так! ${error}`);
     }
   }
 
   async deleteUser(req, res) {
   try {
-    const {id} = req.params;
-    const user = await User.destroy({where: {id:id}});
-    if(!user){
-      return res.status(500).send('Пользователь не найден!');
+    const user = await userService.deleteUser(req.params.id)
+    if(user.errorCode){
+      return res.status(user.errorCode).send(user.errorMessage);
     }
+    fs.unlink(`uploads/images/${user.img}`, ()=>{
+      console.log('deleted');
+    });
     res.status(200).send('Пользователь успешно удалён!');
   } catch (error) {
     res.status(500).send('Что-то пошло не так!');

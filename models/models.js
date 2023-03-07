@@ -20,10 +20,11 @@ const User = sequelize.define(
   "user",
   {
     id: id,
-    login: { type: DataTypes.STRING, allowNull: false},
+    nickname: { type: DataTypes.STRING, allowNull: false},
     email: { type: DataTypes.STRING, allowNull: false, unique: true},
     password: { type: DataTypes.STRING, allowNull: false},
     img: { type: DataTypes.STRING, allowNull: false},
+    role: DataTypes.ENUM('admin', 'user'),
     date_create: date_create
   }
 );

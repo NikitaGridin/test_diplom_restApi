@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const albumRoute = require('./albumRoute')
 const userRouter = require('./userRouter')
 
 router.use("/album", userRouter)
