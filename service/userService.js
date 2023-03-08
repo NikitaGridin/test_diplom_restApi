@@ -1,4 +1,4 @@
-const { User } = require("../models/models");
+const { User, Album } = require("../models/models");
 const bcrypt = require('bcrypt');
 const fs = require("fs");
 
@@ -17,8 +17,7 @@ class userService {
   }
   async createUser(body, img) {
     const { nickname, email, password } = body;
-    const role = "User";
-    if (!nickname || !email || !password) {
+    if (!nickname || !email || !password || !img) {
       return {
         errorCode: 400,
         errorMessage: "Пожалуйста, заполните все поля!",
@@ -31,6 +30,7 @@ class userService {
         errorMessage: "Данный Email занят!",
       };
     }
+    const role = "User";
     const password_hash = await bcrypt.hash(password, 10);
     const newUser = await User.create({
       nickname,
@@ -39,6 +39,7 @@ class userService {
       img: img.filename,
       role,
     });
+  
     return newUser;
   }
   
@@ -47,7 +48,7 @@ class userService {
   
     // Проверяем, что email не занят другим пользователем
     if (email) {
-      const existingUser = await User.findAll({ where: { email } });
+      const existingUser = await User.findOne({ where: { email } });
       if (existingUser && existingUser.id !== id) {
         return {
           errorCode: 409,
@@ -58,47 +59,52 @@ class userService {
   
     // Составляем объект с полями для обновления
     const updateFields = {};
-    if (nickname) {
-      updateFields.nickname = nickname;
-    }
-    if (email) {
-      updateFields.email = email;
-    }
+    if (nickname) updateFields.nickname = nickname;
+    if (email) updateFields.email = email;
     if (password) {
       const password_hash = await bcrypt.hash(password, 10);
       updateFields.password = password_hash;
     }
     if (img) {
       const findUser = await User.findByPk(id);
-      fs.unlinkSync(`uploads/images/${findUser.img}`)
-        updateFields.img = img;
+      await fs.promises.unlink(`uploads/images/${findUser.img}`);
+      updateFields.img = img.filename;
     }
-  
-    // Обновляем пользователя только с указанными полями
-    const user= await User.update(
-      updateFields,
-      {
-        where: { id }
-    }
-    );
-  
-    return user;
-  }
-  
+      // Обновляем пользователя только с указанными полями
+      const [numRows, updatedUser] = await User.update(updateFields, {
+      where: { id },
+      returning: true
+      });
 
+      if (numRows === 0) {
+      return {
+      errorCode: 400,
+      errorMessage: 'Не указаны поля для обновления'
+      };
+      }
+
+      return updatedUser;
+    }
+  
   async deleteUser(id) {
+    const findAlbums = await Album.findAll({where: {userId:id}});
+    if(findAlbums){
+      findAlbums.forEach(element => {
+        fs.promises.unlink(`uploads/images/${element.img}`);
+      });
+    }
     const findUser = await User.findByPk(id);
-    fs.unlink(`uploads/images/${findUser.img}`, ()=>{
-      console.log('deleted');
-    });
-    const user = await User.destroy({where: {id:id}});
-    if(!user){
+    if (findUser && findUser.img) {
+      await fs.promises.unlink(`uploads/images/${findUser.img}`);
+    }
+    const deletedUser = await User.destroy({where: {id:id}});
+    if(!deletedUser){
         return {
             errorCode: 404,
             errorMessage: 'Пользователь не найден'
           };
         }
-        return user;
+        return deletedUser;
       }
 }
 module.exports = new userService();

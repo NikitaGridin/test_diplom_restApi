@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController')
 
-const fileMiddleware = require('../multerStorage');
+const fileMiddleware = require('../middleware/multerStorage');
 
-router.get("/all", userController.getAllUsers)
-router.get("/one/:id", userController.getOneUser)
-router.post("/create", fileMiddleware.single('img'),userController.createUser)
-router.put("/update/:id", fileMiddleware.single('img'),userController.updateUser)
-router.delete("/delete/:id", userController.deleteUser)
+router.get("/all", userController.getAllUsers) //get all users
+router.get("/one/:id", userController.getOneUser) //get one user by id
+router.post("/create", fileMiddleware.single('img'),userController.createUser) //create user with profile image
+router.put("/update/:id", fileMiddleware.single('img'),userController.updateUser) //update user with profile image
+router.delete("/delete/:id", userController.deleteUser) //delte user by id
 
 module.exports = router;

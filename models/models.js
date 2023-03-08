@@ -34,9 +34,9 @@ const Track = sequelize.define(
   "track",
   {
     id: id,
-    title: { type: DataTypes.STRING, allowNull: false},
-    img: { type: DataTypes.STRING, allowNull: false},
-    date_create: date_create,
+    title: { type: DataTypes.STRING, allowNull: false}, 
+    audio: { type: DataTypes.STRING, allowNull: false},
+
   }
 );
 
@@ -70,7 +70,6 @@ const Genre = sequelize.define(
   {
     id: id,
     title: { type: DataTypes.STRING, allowNull: false},
-    img: { type: DataTypes.STRING, allowNull: false},
   }
 );
 

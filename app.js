@@ -5,11 +5,14 @@ const { sequelize } = require("./db");
 const routes = require('./routes/routes')
 
 const cors = require('cors');
+const errorHandler = require('./middleware/errorHandler');
 
 app.use(express.json());
 app.use(cors())
+app.use(express.static('uploads'))
 
 app.use("/api", routes);
+app.use(errorHandler);
 
   sequelize
   .sync()
