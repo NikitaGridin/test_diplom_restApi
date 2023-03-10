@@ -12,8 +12,8 @@ class userController {
   async getOneUser(req, res,next) {
     try {
       const user = await userService.getOneUser(req.params.id)
-      if (!user) {
-        throw Object.assign(new Error("Пользователь не найден!"), { statusCode: 404 });
+      if(user.errorCode){
+        throw Object.assign(new Error(user.errorMessage), { statusCode: user.errorCode });
       }
       res.send(user).status(200);
     } catch (error) {

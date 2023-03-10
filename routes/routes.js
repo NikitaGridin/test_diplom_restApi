@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const userRouter = require('./userRouter')
 
-router.use("/album", userRouter)
 router.use("/user", userRouter)
+router.use("/album", userRouter)
 router.use("/track", userRouter)
 router.use("/playlist", userRouter)
 router.use("/single", userRouter)
