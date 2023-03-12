@@ -13,10 +13,14 @@ const { Connection } = require('./connection.model')
 const { Subcribe } = require('./subcribe.model')
 const { UserPlaylistLibray } = require('./userPlaylistLibray.model')
 const { AlbumGenre } = require('./albumGenre.model')
+const { Token } = require('./token')
 
 
 Album.hasMany(Track,{onDelete: "cascade"});
 Track.belongsTo(Album);
+
+User.hasOne(Token,{onDelete: "cascade"});
+Token.belongsTo(User);
 
 User.belongsToMany(Track, { through: UserTrack, onDelete: "cascade", unique: true});
 Track.belongsToMany(User, { through: UserTrack , onDelete: "cascade", unique: true});
@@ -96,7 +100,8 @@ module.exports = {
   UserTrackLibray,
   Connection,
   Subcribe,
-  UserPlaylistLibray
+  UserPlaylistLibray,
+  Token
 };
 
 

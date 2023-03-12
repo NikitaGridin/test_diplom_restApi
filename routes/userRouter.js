@@ -6,8 +6,7 @@ const fileMiddleware = require('../middleware/multerStorage');
 
 router.get("/all", userController.getAllUsers) //get all users
 router.get("/one/:id", userController.getOneUser) //get one user by id
-router.post("/create", fileMiddleware.single('img'),userController.createUser) //create user with profile image
 router.put("/update/:id", fileMiddleware.single('img'),userController.updateUser) //update user with profile image
-router.delete("/delete/:id", userController.deleteUser) //delte user by id
+router.delete("/delete/:id", userController.deleteUser) //delete user by id
 
 module.exports = router;

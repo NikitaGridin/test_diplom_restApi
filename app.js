@@ -10,6 +10,7 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(express.json());
 app.use(cors())
 app.use(express.static('uploads'))
+// app.use(cookieParser());
 
 app.use("/api", routes);
 app.use(errorHandler);

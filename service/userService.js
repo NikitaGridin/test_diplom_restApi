@@ -3,10 +3,12 @@ const bcrypt = require('bcrypt');
 const fs = require("fs");
 
 class userService {
+
   async getAllUsers() {
       const users = await User.findAll();
       return users;
   }
+  
   async getOneUser(id) {
       const user = await User.findByPk(id);
       if(!user){
@@ -17,52 +19,19 @@ class userService {
       }
       return user;
   }
-  async createUser(body, img) {
-    const { nickname, email, password } = body;
-    if (!nickname || !email || !password || !img) {
-      return {
-        errorCode: 400,
-        errorMessage: "Пожалуйста, заполните все поля!",
-      };
-    }
-    const user = await User.findOne({ where: { email } });
-    if (user) {
-      return {
-        errorCode: 409,
-        errorMessage: "Данный Email занят!",
-      };
-    }
-    const role = "User";
-    const password_hash = await bcrypt.hash(password, 10);
-    const newUser = await User.create({
-      nickname,
-      email,
-      password: password_hash,
-      img: img.filename,
-      role,
-    });
-  
-    return newUser;
-  }
   
   async updateUser(body, id, img) {
     const { nickname, email, password } = body;
 
     const findUser = await User.findByPk(id);
     if(!findUser){
-      return {
-        errorCode: 404,
-        errorMessage: 'Пользователь не найдён!'
-      };
+      throw Object.assign(new Error('Пользователь не найдён!'), { statusCode: 404 });
     }
     // Проверяем, что email не занят другим пользователем
     if (email) {
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser && existingUser.id !== id) {
-        return {
-          errorCode: 409,
-          errorMessage: 'Данный Email занят!'
-        };
+        throw Object.assign(new Error(`Пользователь с ${email} уже существует`), { statusCode: 409 });
       }
     }
   
@@ -75,7 +44,6 @@ class userService {
       updateFields.password = password_hash;
     }
     if (img) {
-      const findUser = await User.findByPk(id);
       await fs.promises.unlink(`uploads/images/${findUser.img}`);
       updateFields.img = img.filename;
     }
@@ -86,10 +54,7 @@ class userService {
       });
 
       if (numRows === 0) {
-      return {
-      errorCode: 400,
-      errorMessage: 'Не указаны поля для обновления'
-      };
+      throw Object.assign(new Error('Не указаны поля для обновления'), { statusCode: 400 });
       }
 
       return updatedUser;
@@ -117,10 +82,7 @@ class userService {
     }
     const deletedUser = await User.destroy({where: {id:id}}); //delete user by id
     if(!deletedUser){
-        return {
-            errorCode: 404,
-            errorMessage: 'Пользователь не найден'
-          };
+          throw Object.assign(new Error('Пользователь не найден'), { statusCode: 404 });
         }
         return deletedUser;
       }
